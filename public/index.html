@@ -39,6 +39,22 @@ const TRANSFERS = [];
 const POLL_MS = 3 * 60 * 1000;
 const costBg = { 4: "#b91c1c", 3: "#1d4ed8", 2: "#15803d", 1: "#7e22ce" };
 
+// Editing windows (all times ET — adjust as tee times are confirmed)
+const EDIT_WINDOWS = [
+  { open: new Date("2026-01-01T00:00:00-05:00"), close: new Date("2026-05-14T07:00:00-04:00"), label: "Team picks" },
+  { open: new Date("2026-05-15T20:00:00-04:00"), close: new Date("2026-05-16T07:00:00-04:00"), label: "Transfer window" },
+];
+function editingStatus() {
+  const now = new Date();
+  for (const w of EDIT_WINDOWS) {
+    if (now >= w.open && now < w.close) return { allowed: true, label: w.label };
+  }
+  // Find next window
+  const next = EDIT_WINDOWS.find(w => now < w.open);
+  if (next) return { allowed: false, label: `Locked until ${next.label.toLowerCase()}` };
+  return { allowed: false, label: "Editing closed" };
+}
+
 function normalize(n) {
   return n.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z ]/g,"").trim();
 }
@@ -422,7 +438,11 @@ function App() {
         <div style={{display:"flex",gap:6}}>
           <button onClick={()=>setAutoPoll(!autoPoll)} style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,padding:"6px 12px",border:"1px solid #ccc",borderRadius:6,cursor:"pointer",background:autoPoll?"#002d72":"#fff",color:autoPoll?"#fff":"#555"}}>{autoPoll?"⏸ Pause":"▶ Live"}</button>
           <button onClick={doFetch} disabled={status==="fetching"} style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,padding:"6px 12px",border:"2px solid #002d72",borderRadius:6,cursor:"pointer",background:"#fff",color:"#002d72",opacity:status==="fetching"?.5:1}}>🏌️ Refresh</button>
-          <button onClick={openPicker} style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,padding:"6px 12px",border:"2px solid #c9a84c",borderRadius:6,cursor:"pointer",background:"#c9a84c",color:"#fff"}}>✏️ Pick Team</button>
+          {(()=>{const es=editingStatus();return es.allowed?(
+            <button onClick={openPicker} style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,padding:"6px 12px",border:"2px solid #c9a84c",borderRadius:6,cursor:"pointer",background:"#c9a84c",color:"#fff"}}>✏️ Pick Team</button>
+          ):(
+            <span style={{fontSize:11,color:"#999",fontStyle:"italic",padding:"6px 0"}}>{es.label}</span>
+          );})()}
         </div>
       </div>
 

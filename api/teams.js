@@ -6,6 +6,16 @@ const hashPin = (pin) =>
 
 const TEAM_IDS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 
+// Editing windows (must match public/index.html)
+const EDIT_WINDOWS = [
+  { open: new Date("2026-01-01T00:00:00-05:00"), close: new Date("2026-05-14T07:00:00-04:00") },
+  { open: new Date("2026-05-15T20:00:00-04:00"), close: new Date("2026-05-16T07:00:00-04:00") },
+];
+function isEditingAllowed() {
+  const now = new Date();
+  return EDIT_WINDOWS.some(w => now >= w.open && now < w.close);
+}
+
 // Duplicated here so the serverless function can validate independently of the frontend.
 // When the real roster is set, update both here and in public/index.html.
 const PRICE_TIERS = {
@@ -75,6 +85,10 @@ export default async function handler(req, res) {
 
   // POST — save a roster
   if (req.method !== "POST") return res.status(405).json({ error: "GET or POST" });
+
+  if (!isEditingAllowed()) {
+    return res.status(403).json({ error: "Editing is currently locked." });
+  }
 
   const { teamId, pin, players } = req.body || {};
   if (teamId == null || !pin || !players) {
