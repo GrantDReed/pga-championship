@@ -26,7 +26,28 @@ const TEAMS = [
   { id: 3, name: "Louis Browne", players: [] },
 ];
 
-const NPC_TEAMS = [];
+// Benchmark teams: highest-OWGR player available at each price slot, for the
+// three ways to spend the full £10m. OWGR snapshot taken in tournament week.
+const NPC_TEAMS = [
+  { id: "owgr-4321", strategy: "OWGR Optimal", detailLabel: "OWGR", combo: "4·3·2·1", players: [
+    { name: "Scottie Scheffler", cost: 4, detail: "#1" },
+    { name: "Collin Morikawa", cost: 3, detail: "#5" },
+    { name: "J.J. Spaun", cost: 2, detail: "#8" },
+    { name: "Alex Noren", cost: 1, detail: "#18" },
+  ]},
+  { id: "owgr-3322", strategy: "OWGR Optimal", detailLabel: "OWGR", combo: "3·3·2·2", players: [
+    { name: "Collin Morikawa", cost: 3, detail: "#5" },
+    { name: "Tommy Fleetwood", cost: 3, detail: "#6" },
+    { name: "J.J. Spaun", cost: 2, detail: "#8" },
+    { name: "Chris Gotterup", cost: 2, detail: "#10" },
+  ]},
+  { id: "owgr-4222", strategy: "OWGR Optimal", detailLabel: "OWGR", combo: "4·2·2·2", players: [
+    { name: "Scottie Scheffler", cost: 4, detail: "#1" },
+    { name: "J.J. Spaun", cost: 2, detail: "#8" },
+    { name: "Chris Gotterup", cost: 2, detail: "#10" },
+    { name: "Sepp Straka", cost: 2, detail: "#13" },
+  ]},
+];
 
 const TRANSFERS = [];
 
@@ -660,7 +681,7 @@ function App() {
       {view==="npc" && (
       <section style={{maxWidth:860,margin:"0 auto",padding:"16px 16px 24px"}}>
         <div style={{fontSize:12,color:"#777",marginBottom:10,lineHeight:1.5}}>
-          NPC benchmark teams — coming soon.
+          Benchmark teams to beat. For each of the three ways to spend the full £10m, this picks the highest-ranked player available at every price slot by Official World Golf Ranking (snapshot taken in tournament week — see each player's OWGR position in the expanded view).
         </div>
         <div style={{display:"flex",flexDirection:"column",gap:8}}>
           {rankedNpc.map((team,idx)=>{
