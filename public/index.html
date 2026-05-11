@@ -162,7 +162,7 @@ function App() {
       setPlayers(map);
       setLastUpdated(new Date());
       setStatus("success");
-      setMsg(`${data.playerCount} players via ${data.source}`);
+      setMsg(data.status === "not-started" ? "Tournament not started" : `${data.playerCount} players via ${data.source}`);
     } catch (e) {
       setStatus("error");
       setMsg(e.message);

@@ -1,3 +1,8 @@
+const isPgaChampionship = (event) => {
+  const name = (event?.name || event?.shortName || "").toLowerCase();
+  return name.includes("pga championship");
+};
+
 const SOURCES = [
   {
     name: "espn-leaderboard",
@@ -5,6 +10,7 @@ const SOURCES = [
     parse: (data) => {
       const competitors = [];
       for (const event of data?.events || []) {
+        if (!isPgaChampionship(event)) continue;
         for (const comp of event?.competitions || []) {
           competitors.push(...(comp.competitors || []));
         }
@@ -39,6 +45,7 @@ const SOURCES = [
     parse: (data) => {
       const competitors = [];
       for (const event of data?.events || []) {
+        if (!isPgaChampionship(event)) continue;
         for (const comp of event?.competitions || []) {
           competitors.push(...(comp.competitors || []));
         }
@@ -100,5 +107,10 @@ export default async function handler(req, res) {
     }
   }
 
-  return res.status(502).json({ error: "All sources failed", details: errors });
+  return res.status(200).json({
+    status: "not-started",
+    updated: new Date().toISOString(),
+    playerCount: 0,
+    players: [],
+  });
 }
