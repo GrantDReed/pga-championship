@@ -4,7 +4,7 @@ import { redis } from "./redis.js";
 const hashPin = (pin) =>
   createHash("sha256").update(String(pin)).digest("hex");
 
-const TEAM_IDS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+const TEAM_IDS = [0, 1, 2];
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
