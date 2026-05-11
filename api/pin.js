@@ -24,7 +24,9 @@ export default async function handler(req, res) {
   for (const id of TEAM_IDS) {
     const stored = await redis.get(`pin:${id}`);
     if (stored === hash) {
-      return res.status(200).json({ status: "verified", teamId: id });
+      const raw = await redis.get(`roster:${id}`);
+      const roster = raw ? JSON.parse(raw) : [];
+      return res.status(200).json({ status: "verified", teamId: id, roster });
     }
   }
 

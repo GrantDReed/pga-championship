@@ -16,6 +16,10 @@ function isEditingAllowed() {
   return EDIT_WINDOWS.some(w => now >= w.open && now < w.close);
 }
 
+// Rosters are public only once play begins (the first tee time).
+const TOURNAMENT_START = new Date("2026-05-14T07:00:00-04:00");
+function tournamentHasStarted() { return new Date() >= TOURNAMENT_START; }
+
 // Duplicated here so the serverless function can validate independently of the frontend.
 // When the real roster is set, update both here and in public/index.html.
 const PRICE_TIERS = {
@@ -73,14 +77,17 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   if (req.method === "OPTIONS") return res.status(204).end();
 
-  // GET — return all rosters
+  // GET — return all rosters (redacted until the tournament starts)
   if (req.method === "GET") {
+    const revealed = tournamentHasStarted();
     const teams = {};
     for (const id of TEAM_IDS) {
       const raw = await redis.get(`roster:${id}`);
-      teams[id] = raw ? JSON.parse(raw) : [];
+      const roster = raw ? JSON.parse(raw) : [];
+      // Before play begins, expose only whether a team has picked — not who.
+      teams[id] = revealed ? roster : [];
     }
-    return res.status(200).json({ teams });
+    return res.status(200).json({ teams, revealed });
   }
 
   // POST — save a roster
