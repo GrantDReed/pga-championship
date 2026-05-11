@@ -93,6 +93,7 @@ function App() {
   const [msg, setMsg] = useState("");
   const [autoPoll, setAutoPoll] = useState(true);
   const [rulesOpen, setRulesOpen] = useState(false);
+  const [tierMethodOpen, setTierMethodOpen] = useState(false);
   const [view, setView] = useState("leaderboard");
   const [isMobile, setIsMobile] = useState(window.innerWidth < 480);
   // Team picker state
@@ -456,6 +457,37 @@ function App() {
               <li style={{marginBottom:10}}><strong>Missed cut penalty:</strong> If after the free transfer a team still has any player(s) who missed the cut, those players are assigned the <em>worst score of the round</em> (i.e. the highest round score shot by any player still playing) for Rounds 3 and 4.</li>
               <li><strong>Tiebreaker:</strong> If two or more teams finish level on total score, the team whose <em>single best player</em> shot the lower score wins. If those are still level, compare the next-best player, and so on.</li>
             </ol>
+
+            <div style={{marginTop:16,borderTop:"1px solid #e8e4da",paddingTop:14}}>
+              <button onClick={()=>setTierMethodOpen(!tierMethodOpen)} style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 12px",background:tierMethodOpen?"#f0ece2":"#fff",color:"#002d72",border:"1px solid #cdd9ec",borderRadius:6,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700,letterSpacing:1}}>
+                <span>HOW PLAYERS WERE PLACED IN TIERS</span>
+                <span style={{fontSize:11}}>{tierMethodOpen?"▲":"▼"}</span>
+              </button>
+              {tierMethodOpen && (
+                <div style={{marginTop:10,fontSize:12.5,lineHeight:1.65,color:"#444"}}>
+                  <p style={{margin:"0 0 12px"}}><strong>Starting point: betting odds.</strong> DraftKings outright odds are the default tier placement — odds already blend the market's view of recent form, ceiling, course fit and injury news, so they're the right anchor. But odds get less informative down the board:</p>
+                  <ul style={{margin:"0 0 12px",paddingLeft:18}}>
+                    <li style={{marginBottom:5}}><strong>£4M &amp; £3M:</strong> odds-first. The gaps between +345, +800, +1300 are meaningful.</li>
+                    <li style={{marginBottom:5}}><strong>£2M:</strong> odds-informed, but form weighs more heavily where odds start to compress.</li>
+                    <li><strong>£1M:</strong> form-driven. With 90+ players bunched at +30000 and up, odds can't meaningfully separate them.</li>
+                  </ul>
+                  <p style={{margin:"0 0 6px"}}><strong>Form evaluation (used to spot divergences from odds):</strong></p>
+                  <ul style={{margin:"0 0 12px",paddingLeft:18}}>
+                    <li style={{marginBottom:5}}><strong>Heaviest:</strong> last 4–6 starts (Feb–Apr 2026), anchored by the Masters — but Masters results carry less weight for players with fewer than 5 career Augusta starts, since that course rewards experience uniquely.</li>
+                    <li style={{marginBottom:5}}><strong>Medium:</strong> last 12 months as a form baseline.</li>
+                    <li style={{marginBottom:5}}><strong>Light:</strong> 2024–2025 as a sanity check on true skill.</li>
+                    <li><strong>Cut-probability proxy:</strong> cut rate over the last 10–12 starts — the single best predictor of making the weekend.</li>
+                  </ul>
+                  <p style={{margin:"0 0 6px"}}><strong>Override rules — form beats odds only with a clear reason:</strong></p>
+                  <ul style={{margin:"0 0 12px",paddingLeft:18}}>
+                    <li style={{marginBottom:5}}><strong>Injury (demote):</strong> clear injury with a recent WD → down one tier. E.g. Bryson DeChambeau (+1700 ≈ £4M, but wrist injury + Masters MC → £3M).</li>
+                    <li style={{marginBottom:5}}><strong>Hot form (promote):</strong> results not yet priced into odds → up a tier. E.g. Matt Fitzpatrick (+1950 → £4M after 3 wins in 4 starts); Brandt Snedeker (just won Myrtle Beach → £2M, not £1M).</li>
+                    <li><strong>Default:</strong> defer to odds when there's no clear injury or form-divergence reason.</li>
+                  </ul>
+                  <p style={{margin:0}}><strong>Course fit (tiebreaker only).</strong> Aronimink (Donald Ross, par 70, ~7,300 yds) rewards ball-strikers and accurate iron play — used only to break ties between similarly-ranked players, never as a primary driver. PGA-specific Aronimink history is non-predictive (last PGA there was 1962).</p>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
