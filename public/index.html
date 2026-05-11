@@ -433,7 +433,7 @@ function App() {
           <button onClick={()=>setAutoPoll(!autoPoll)} style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,padding:"6px 12px",border:"1px solid #ccc",borderRadius:6,cursor:"pointer",background:autoPoll?"#002d72":"#fff",color:autoPoll?"#fff":"#555"}}>{autoPoll?"⏸ Pause":"▶ Live"}</button>
           <button onClick={doFetch} disabled={status==="fetching"} style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,padding:"6px 12px",border:"2px solid #002d72",borderRadius:6,cursor:"pointer",background:"#fff",color:"#002d72",opacity:status==="fetching"?.5:1}}>🏌️ Refresh</button>
           {(()=>{const es=editingStatus();return es.allowed?(
-            <button onClick={openPicker} style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,padding:"6px 12px",border:"2px solid #c9a84c",borderRadius:6,cursor:"pointer",background:"#c9a84c",color:"#fff"}}>✏️ Pick Team</button>
+            <button onClick={openPicker} style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,padding:"6px 12px",border:"2px solid #c9a84c",borderRadius:6,cursor:"pointer",background:"#c9a84c",color:"#fff"}}>✏️ Pick / Edit Team</button>
           ):(
             <span style={{fontSize:11,color:"#999",fontStyle:"italic",padding:"6px 0"}}>{es.label}</span>
           );})()}
@@ -697,7 +697,7 @@ function App() {
           <div style={{background:"#fff",borderRadius:12,maxWidth:480,width:"100%",maxHeight:"90vh",overflow:"auto",boxShadow:"0 10px 40px rgba(0,0,0,.3)"}} onClick={e=>e.stopPropagation()}>
             <div style={{padding:"20px 24px",borderBottom:"1px solid #eee",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
               <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:"#002d72",margin:0}}>
-                {pickStep==="pin"?"Enter PIN":`${TEAMS.find(t=>t.id===pickTeamId)?.name} — Build Roster`}
+                {pickStep==="pin"?"Enter PIN":`${TEAMS.find(t=>t.id===pickTeamId)?.name} — ${(teamRosters[pickTeamId]||[]).length>0?"Edit Roster":"Build Roster"}`}
               </h2>
               <button onClick={()=>setPickOpen(false)} style={{background:"none",border:"none",fontSize:22,cursor:"pointer",color:"#999",lineHeight:1}}>×</button>
             </div>
@@ -707,7 +707,7 @@ function App() {
               {pickStep==="pin" && (
                 <div>
                   <div style={{fontSize:12,color:"#999",marginBottom:16}}>
-                    Enter the 4-digit PIN you were given.
+                    Enter the 4-digit PIN you were given. You can come back here to edit your team any time until the first tee time.
                   </div>
                   <input type="password" inputMode="numeric" maxLength={4} placeholder="PIN" value={pickPin}
                     onChange={e=>setPickPin(e.target.value.replace(/\D/g,"").slice(0,4))}
