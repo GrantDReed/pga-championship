@@ -16,7 +16,7 @@ export default async function handler(req, res) {
 
   // Wipe rosters (and optionally PINs)
   if (action === "wipe") {
-    const TEAM_IDS = [0, 1, 2];
+    const TEAM_IDS = [0, 1, 2, 3];
     for (const id of TEAM_IDS) {
       await redis.del(`roster:${id}`);
     }
