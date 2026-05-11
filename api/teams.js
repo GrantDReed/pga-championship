@@ -113,6 +113,20 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Invalid roster", details: errors });
   }
 
+  // Reject identical 4-player rosters already picked by another team
+  const newKey = players.map((p) => normalize(p.name)).sort().join("|");
+  for (const id of TEAM_IDS) {
+    if (id === teamId) continue;
+    const raw = await redis.get(`roster:${id}`);
+    if (!raw) continue;
+    const other = JSON.parse(raw);
+    if (!Array.isArray(other) || other.length !== 4) continue;
+    const otherKey = other.map((p) => normalize(p.name)).sort().join("|");
+    if (otherKey === newKey) {
+      return res.status(409).json({ error: "Another team has already picked this exact 4-player roster. Please change at least one player." });
+    }
+  }
+
   // Save
   await redis.set(`roster:${teamId}`, JSON.stringify(players));
   return res.status(200).json({ status: "saved", players });
