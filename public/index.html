@@ -54,13 +54,13 @@ const TRANSFERS = [];
 const POLL_MS = 3 * 60 * 1000;
 const costBg = { 4: "#b91c1c", 3: "#1d4ed8", 2: "#15803d", 1: "#7e22ce" };
 
-// Editing windows (all times ET — adjust as tee times are confirmed)
+// Editing windows (all times ET). R1 first tee time is 6:45 AM Thu May 14.
+// The post-R2 transfer window will be added manually once cut/R3 times are known.
 const EDIT_WINDOWS = [
-  { open: new Date("2026-01-01T00:00:00-05:00"), close: new Date("2026-05-14T07:00:00-04:00"), label: "Team picks" },
-  { open: new Date("2026-05-15T20:00:00-04:00"), close: new Date("2026-05-16T07:00:00-04:00"), label: "Transfer window" },
+  { open: new Date("2026-01-01T00:00:00-05:00"), close: new Date("2026-05-14T06:45:00-04:00"), label: "Team picks" },
 ];
 // Rosters stay hidden in the public list until the first tee time.
-const TOURNAMENT_START = new Date("2026-05-14T07:00:00-04:00");
+const TOURNAMENT_START = new Date("2026-05-14T06:45:00-04:00");
 function tournamentHasStarted() { return new Date() >= TOURNAMENT_START; }
 // Order roster chips: highest tier first, swapped-in player last.
 function rosterDisplayOrder(players) {

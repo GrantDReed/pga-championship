@@ -8,8 +8,8 @@ const TEAM_IDS = [0, 1, 2, 3];
 
 // Editing windows (must match public/index.html)
 const EDIT_WINDOWS = [
-  { open: new Date("2026-01-01T00:00:00-05:00"), close: new Date("2026-05-14T07:00:00-04:00") },
-  { open: new Date("2026-05-15T20:00:00-04:00"), close: new Date("2026-05-16T07:00:00-04:00") },
+  { open: new Date("2026-01-01T00:00:00-05:00"), close: new Date("2026-05-14T06:45:00-04:00") },
+  // Post-R2 transfer window added manually when cut/R3 times are known.
 ];
 function isEditingAllowed() {
   const now = new Date();
@@ -17,7 +17,7 @@ function isEditingAllowed() {
 }
 
 // Rosters are public only once play begins (the first tee time).
-const TOURNAMENT_START = new Date("2026-05-14T07:00:00-04:00");
+const TOURNAMENT_START = new Date("2026-05-14T06:45:00-04:00");
 function tournamentHasStarted() { return new Date() >= TOURNAMENT_START; }
 
 // Duplicated here so the serverless function can validate independently of the frontend.
