@@ -821,7 +821,7 @@ function App() {
                     <div style={{marginBottom:16,padding:"12px",background:"#eef2f9",border:"1px solid #cdd9ec",borderRadius:8}}>
                       <div style={{fontSize:11,fontWeight:700,letterSpacing:2,color:"#666",marginBottom:8}}>YOUR TEAM — TAP TO REMOVE</div>
                       <div style={{display:"flex",flexDirection:"column",gap:4}}>
-                        {pickPlayers.map(p=>(
+                        {rosterDisplayOrder(pickPlayers).map(p=>(
                           <button key={p.name} onClick={()=>togglePlayer(p.name,p.cost)}
                             style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 12px",background:"#002d72",color:"#fff",border:"1px solid #002d72",borderRadius:8,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:700}}>
                             <span>✕ {p.name}</span>
