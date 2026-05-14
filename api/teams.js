@@ -30,7 +30,15 @@ const PRICE_TIERS = {
 };
 
 function normalize(n) {
-  return n.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z ]/g, "").trim();
+  // Map atomic non-ASCII letters that NFD won't decompose (\u00f8, \u00e6, \u0142, \u0111, \u00df, \u00f0).
+  const mapped = n
+    .replace(/\u00f8/g, "o").replace(/\u00d8/g, "O")
+    .replace(/\u00e6/g, "ae").replace(/\u00c6/g, "AE")
+    .replace(/\u0142/g, "l").replace(/\u0141/g, "L")
+    .replace(/\u0111/g, "d").replace(/\u0110/g, "D")
+    .replace(/\u00f0/g, "d").replace(/\u00d0/g, "D")
+    .replace(/\u00df/g, "ss");
+  return mapped.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z ]/g, "").trim();
 }
 
 function getPlayerCost(name) {
