@@ -26,7 +26,9 @@ export default async function handler(req, res) {
     if (stored === hash) {
       const raw = await redis.get(`roster:${id}`);
       const roster = raw ? JSON.parse(raw) : [];
-      return res.status(200).json({ status: "verified", teamId: id, roster });
+      const tRaw = await redis.get(`transfer:${id}`);
+      const transfer = tRaw ? JSON.parse(tRaw) : null;
+      return res.status(200).json({ status: "verified", teamId: id, roster, transfer });
     }
   }
 

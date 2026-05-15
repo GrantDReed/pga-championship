@@ -6,14 +6,21 @@ const hashPin = (pin) =>
 
 const TEAM_IDS = [0, 1, 2, 3];
 
-// Editing windows (must match public/index.html)
+// Editing windows (must match public/index.html). mode: "build" = initial
+// pick (overwrites full roster); "swap" = one-swap transfer (writes transfer:* key).
 const EDIT_WINDOWS = [
-  { open: new Date("2026-01-01T00:00:00-05:00"), close: new Date("2026-05-14T06:45:00-04:00") },
-  // Post-R2 transfer window added manually when cut/R3 times are known.
+  { open: new Date("2026-01-01T00:00:00-05:00"), close: new Date("2026-05-14T06:45:00-04:00"), mode: "build" },
+  // Post-R2 transfer window appended manually when cut/R3 first-tee-time are known:
+  // { open: new Date("2026-05-15T..."), close: new Date("2026-05-16T..."), mode: "swap" },
 ];
-function isEditingAllowed() {
+function activeWindow() {
   const now = new Date();
-  return EDIT_WINDOWS.some(w => now >= w.open && now < w.close);
+  return EDIT_WINDOWS.find(w => now >= w.open && now < w.close) || null;
+}
+// Transfers become publicly visible once any swap window has closed (= first R3 tee time passed).
+function transfersRevealed() {
+  const now = new Date();
+  return EDIT_WINDOWS.some(w => w.mode === "swap" && now >= w.close);
 }
 
 // Rosters are public only once play begins (the first tee time).
@@ -85,23 +92,29 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   if (req.method === "OPTIONS") return res.status(204).end();
 
-  // GET — return all rosters (redacted until the tournament starts)
+  // GET — return all rosters + transfers (each redacted appropriately)
   if (req.method === "GET") {
     const revealed = tournamentHasStarted();
+    const revealTransfers = transfersRevealed();
     const teams = {};
+    const transfers = {};
     for (const id of TEAM_IDS) {
       const raw = await redis.get(`roster:${id}`);
       const roster = raw ? JSON.parse(raw) : [];
-      // Before play begins, expose only whether a team has picked — not who.
       teams[id] = revealed ? roster : [];
+      if (revealTransfers) {
+        const tRaw = await redis.get(`transfer:${id}`);
+        if (tRaw) transfers[id] = JSON.parse(tRaw);
+      }
     }
-    return res.status(200).json({ teams, revealed });
+    return res.status(200).json({ teams, transfers, revealed, transfersRevealed: revealTransfers });
   }
 
-  // POST — save a roster
+  // POST — save a roster (build mode) or record a swap (swap mode)
   if (req.method !== "POST") return res.status(405).json({ error: "GET or POST" });
 
-  if (!isEditingAllowed()) {
+  const window = activeWindow();
+  if (!window) {
     return res.status(403).json({ error: "Editing is currently locked." });
   }
 
@@ -122,12 +135,44 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: "Invalid PIN" });
   }
 
-  // Validate roster
+  // Standard validation runs in both modes (budget, tier caps, in-field, no dupes)
   const errors = validateRoster(players);
   if (errors.length > 0) {
     return res.status(400).json({ error: "Invalid roster", details: errors });
   }
 
+  if (window.mode === "swap") {
+    // Need an existing roster to diff against
+    const storedRaw = await redis.get(`roster:${teamId}`);
+    if (!storedRaw) {
+      return res.status(400).json({ error: "You don't have a roster on file — initial picks are closed." });
+    }
+    const stored = JSON.parse(storedRaw);
+    const storedByNorm = new Map(stored.map(p => [normalize(p.name), p]));
+    const submittedByNorm = new Map(players.map(p => [normalize(p.name), p]));
+
+    const removed = stored.filter(p => !submittedByNorm.has(normalize(p.name)));
+    const added = players.filter(p => !storedByNorm.has(normalize(p.name)));
+
+    if (removed.length === 0 && added.length === 0) {
+      // Revert path — clear any existing swap
+      await redis.del(`transfer:${teamId}`);
+      return res.status(200).json({ status: "reverted", transfer: null });
+    }
+    if (removed.length !== 1 || added.length !== 1) {
+      return res.status(400).json({ error: "Transfer window allows exactly one swap (change one player). Re-submit your original 4 to clear an existing swap." });
+    }
+    const out = removed[0], inP = added[0];
+    if (inP.cost > out.cost) {
+      return res.status(400).json({ error: `Swap-in player must be same or lower value (£${inP.cost}m > £${out.cost}m).` });
+    }
+
+    const transfer = { out: out.name, outCost: out.cost, in: inP.name, inCost: inP.cost, ts: new Date().toISOString() };
+    await redis.set(`transfer:${teamId}`, JSON.stringify(transfer));
+    return res.status(200).json({ status: "swapped", transfer });
+  }
+
+  // window.mode === "build"
   // Reject identical 4-player rosters already picked by another team
   const newKey = players.map((p) => normalize(p.name)).sort().join("|");
   for (const id of TEAM_IDS) {

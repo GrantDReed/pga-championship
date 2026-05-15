@@ -54,10 +54,12 @@ const TRANSFERS = [];
 const POLL_MS = 3 * 60 * 1000;
 const costBg = { 4: "#b91c1c", 3: "#1d4ed8", 2: "#15803d", 1: "#7e22ce" };
 
-// Editing windows (all times ET). R1 first tee time is 6:45 AM Thu May 14.
-// The post-R2 transfer window will be added manually once cut/R3 times are known.
+// Editing windows (all times ET). mode: "build" = initial pick (whole roster);
+// "swap" = one-swap transfer. The post-R2 transfer window is appended manually
+// once R2 is complete and the first R3 tee time is known.
 const EDIT_WINDOWS = [
-  { open: new Date("2026-01-01T00:00:00-05:00"), close: new Date("2026-05-14T06:45:00-04:00"), label: "Team picks" },
+  { open: new Date("2026-01-01T00:00:00-05:00"), close: new Date("2026-05-14T06:45:00-04:00"), label: "Team picks", mode: "build" },
+  // { open: new Date("..."), close: new Date("..."), label: "Transfer window", mode: "swap" },
 ];
 // Rosters stay hidden in the public list until the first tee time.
 const TOURNAMENT_START = new Date("2026-05-14T06:45:00-04:00");
@@ -73,12 +75,12 @@ function rosterDisplayOrder(players) {
 function editingStatus() {
   const now = new Date();
   for (const w of EDIT_WINDOWS) {
-    if (now >= w.open && now < w.close) return { allowed: true, label: w.label };
+    if (now >= w.open && now < w.close) return { allowed: true, label: w.label, mode: w.mode };
   }
   // Find next window
   const next = EDIT_WINDOWS.find(w => now < w.open);
-  if (next) return { allowed: false, label: `Locked until ${next.label.toLowerCase()}` };
-  return { allowed: false, label: "Editing closed" };
+  if (next) return { allowed: false, label: `Locked until ${next.label.toLowerCase()}`, mode: null };
+  return { allowed: false, label: "Editing closed", mode: null };
 }
 
 function normalize(n) {
@@ -138,11 +140,14 @@ function App() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 480);
   // Team picker state
   const [teamRosters, setTeamRosters] = useState({});
+  const [apiTransfers, setApiTransfers] = useState({});
   const [pickOpen, setPickOpen] = useState(false);
   const [pickStep, setPickStep] = useState("pin"); // pin | edit
   const [pickTeamId, setPickTeamId] = useState(null);
   const [pickPin, setPickPin] = useState("");
   const [pickPlayers, setPickPlayers] = useState([]);
+  const [pickOriginalRoster, setPickOriginalRoster] = useState([]); // canonical roster for swap-mode diff display
+  const [pickPendingTransfer, setPickPendingTransfer] = useState(null);
   const [pickError, setPickError] = useState("");
   const [pickSaving, setPickSaving] = useState(false);
   useEffect(() => {
@@ -153,13 +158,15 @@ function App() {
   }, []);
   const intervalRef = useRef(null);
 
-  // Load rosters from Redis
+  // Load rosters + transfers from Redis (transfers are redacted server-side
+  // until the swap window has closed at first R3 tee time)
   const fetchRosters = useCallback(async () => {
     try {
       const res = await fetch("/api/teams");
       if (res.ok) {
         const data = await res.json();
         setTeamRosters(data.teams || {});
+        setApiTransfers(data.transfers || {});
       }
     } catch (e) {}
   }, []);
@@ -274,9 +281,11 @@ function App() {
     return worst;
   };
 
-  // Build effective roster with roles
+  // Build effective roster with roles. Transfer source: Redis-backed apiTransfers
+  // (only populated after the swap window closes at first R3 tee time) with a
+  // fallback to the hardcoded TRANSFERS const for NPC/historic teams.
   const buildRoster = (team) => {
-    const tx = TRANSFERS.find(t => t.teamId === team.id);
+    const tx = apiTransfers[team.id] || TRANSFERS.find(t => t.teamId === team.id);
     return team.players.map(p => {
       if (tx && nameMatches(p.name, tx.out)) return { ...p, role: "swapped-out" };
       if (isMC(p.name) && !tx?.out) return { ...p, role: "mc" };
@@ -397,6 +406,8 @@ function App() {
     setPickTeamId(null);
     setPickPin("");
     setPickPlayers([]);
+    setPickOriginalRoster([]);
+    setPickPendingTransfer(null);
     setPickError("");
     setPickSaving(false);
   };
@@ -413,8 +424,18 @@ function App() {
       if (data.status === "verified") {
         setPickTeamId(data.teamId);
         setPickStep("edit");
-        const existing = (data.roster && data.roster.length > 0) ? data.roster : teamRosters[data.teamId];
-        if (existing && existing.length > 0) setPickPlayers(existing);
+        const original = (data.roster && data.roster.length > 0) ? data.roster : (teamRosters[data.teamId] || []);
+        setPickOriginalRoster(original);
+        setPickPendingTransfer(data.transfer || null);
+        // Show the EFFECTIVE roster (original with any pending swap applied) so the
+        // participant can keep swapping or revert.
+        let effective = original;
+        if (data.transfer && original.length > 0) {
+          effective = original.map(p => nameMatches(p.name, data.transfer.out)
+            ? { name: data.transfer.in, cost: data.transfer.inCost }
+            : p);
+        }
+        if (effective.length > 0) setPickPlayers(effective);
       } else {
         setPickError("Invalid PIN.");
       }
@@ -775,7 +796,7 @@ function App() {
           <div style={{background:"#fff",borderRadius:12,maxWidth:480,width:"100%",maxHeight:"90vh",overflow:"auto",boxShadow:"0 10px 40px rgba(0,0,0,.3)"}} onClick={e=>e.stopPropagation()}>
             <div style={{padding:"20px 24px",borderBottom:"1px solid #eee",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
               <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:"#002d72",margin:0}}>
-                {pickStep==="pin"?"Enter PIN":`${TEAMS.find(t=>t.id===pickTeamId)?.name} — ${pickPlayers.length>0?"Edit Roster":"Build Roster"}`}
+                {pickStep==="pin"?"Enter PIN":`${TEAMS.find(t=>t.id===pickTeamId)?.name} — ${editingStatus().mode==="swap"?"Transfer":(pickPlayers.length>0?"Edit Roster":"Build Roster")}`}
               </h2>
               <button onClick={()=>setPickOpen(false)} style={{background:"none",border:"none",fontSize:22,cursor:"pointer",color:"#999",lineHeight:1}}>×</button>
             </div>
@@ -804,6 +825,18 @@ function App() {
               {/* Step 3: Team editor */}
               {pickStep==="edit" && (
                 <div>
+                  {/* Transfer-window guidance — only during swap mode */}
+                  {editingStatus().mode==="swap" && (
+                    <div style={{marginBottom:16,padding:"12px 14px",background:"#eef2f9",border:"1px solid #cdd9ec",borderRadius:8,fontSize:12,lineHeight:1.5,color:"#334155"}}>
+                      <div style={{fontWeight:700,letterSpacing:1,fontSize:11,color:"#002d72",marginBottom:6}}>TRANSFER WINDOW</div>
+                      You may swap <strong>exactly one</strong> player for another of <strong>equal or lower value</strong>. The dropped player keeps their R1/R2 score; the new player only contributes R3/R4.
+                      {pickPendingTransfer && (
+                        <div style={{marginTop:8,paddingTop:8,borderTop:"1px dashed #cdd9ec"}}>
+                          <strong>Your current swap:</strong> {pickPendingTransfer.out} (£{pickPendingTransfer.outCost}m) → {pickPendingTransfer.in} (£{pickPendingTransfer.inCost}m). Re-submit your original 4 to revert, or change the swap below.
+                        </div>
+                      )}
+                    </div>
+                  )}
                   {/* Constraint tracker */}
                   <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:16,padding:"12px",background:"#f8f6f0",borderRadius:8,fontSize:12,textAlign:"center"}}>
                     <div>
@@ -868,7 +901,7 @@ function App() {
                     <button onClick={()=>setPickOpen(false)}
                       style={{flex:1,padding:"12px",background:"#f0ece2",border:"1px solid #e8e4da",borderRadius:6,cursor:"pointer",fontSize:13,fontWeight:600,fontFamily:"'DM Sans',sans-serif",color:"#555"}}>Cancel</button>
                     <button onClick={submitTeam} disabled={!pickValid||pickSaving}
-                      style={{flex:2,padding:"12px",background:pickValid?"#002d72":"#ccc",color:"#fff",border:"none",borderRadius:6,cursor:pickValid?"pointer":"default",fontSize:14,fontWeight:700,fontFamily:"'DM Sans',sans-serif"}}>{pickSaving?"Saving…":"Save Team"}</button>
+                      style={{flex:2,padding:"12px",background:pickValid?"#002d72":"#ccc",color:"#fff",border:"none",borderRadius:6,cursor:pickValid?"pointer":"default",fontSize:14,fontWeight:700,fontFamily:"'DM Sans',sans-serif"}}>{pickSaving?"Saving…":(editingStatus().mode==="swap"?"Save Swap":"Save Team")}</button>
                   </div>
                 </div>
               )}

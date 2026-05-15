@@ -25,7 +25,12 @@ export default async function handler(req, res) {
         await redis.del(`pin:${id}`);
       }
     }
-    return res.status(200).json({ status: "wiped", rosters: true, pins: !!req.body.wipePins });
+    if (req.body.wipeTransfers) {
+      for (const id of TEAM_IDS) {
+        await redis.del(`transfer:${id}`);
+      }
+    }
+    return res.status(200).json({ status: "wiped", rosters: true, pins: !!req.body.wipePins, transfers: !!req.body.wipeTransfers });
   }
 
   // Seed PINs — pins should be an object like { "0": "1234", "1": "5678", ... }
