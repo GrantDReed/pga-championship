@@ -10,8 +10,8 @@ const TEAM_IDS = [0, 1, 2, 3];
 // pick (overwrites full roster); "swap" = one-swap transfer (writes transfer:* key).
 const EDIT_WINDOWS = [
   { open: new Date("2026-01-01T00:00:00-05:00"), close: new Date("2026-05-14T06:45:00-04:00"), mode: "build" },
-  // Post-R2 transfer window — close = first R3 tee time (8 AM ET placeholder).
-  { open: new Date("2026-05-15T18:00:00-04:00"), close: new Date("2026-05-16T08:00:00-04:00"), mode: "swap" },
+  // Post-R2 transfer window — close = first R3 tee time (7:45 AM ET).
+  { open: new Date("2026-05-15T18:00:00-04:00"), close: new Date("2026-05-16T07:45:00-04:00"), mode: "swap" },
 ];
 function activeWindow() {
   const now = new Date();
