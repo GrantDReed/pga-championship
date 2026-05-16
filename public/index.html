@@ -142,6 +142,7 @@ function App() {
   // Team picker state
   const [teamRosters, setTeamRosters] = useState({});
   const [apiTransfers, setApiTransfers] = useState({});
+  const [swapsPending, setSwapsPending] = useState({});
   const [pickOpen, setPickOpen] = useState(false);
   const [pickStep, setPickStep] = useState("pin"); // pin | edit
   const [pickTeamId, setPickTeamId] = useState(null);
@@ -168,6 +169,7 @@ function App() {
         const data = await res.json();
         setTeamRosters(data.teams || {});
         setApiTransfers(data.transfers || {});
+        setSwapsPending(data.swapsPending || {});
       }
     } catch (e) {}
   }, []);
@@ -575,7 +577,12 @@ function App() {
                 <div style={{display:"grid",gridTemplateColumns:"44px 1fr auto",alignItems:"center",padding:"14px 16px",gap:12,background:isLeader?"linear-gradient(90deg,#fdf8e8,#fff9e0)":"transparent"}}>
                   <div style={{width:38,height:38,borderRadius:"50%",background:isLeader?"transparent":"#f0ece2",color:"#555",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:isLeader||isLast?22:16}}>{isLeader?"🍆":isLast?"💩":pos}</div>
                   <div>
-                    <div style={{fontSize:16,fontWeight:700,color:"#002d72"}}>{team.name}</div>
+                    <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                      <span style={{fontSize:16,fontWeight:700,color:"#002d72"}}>{team.name}</span>
+                      {swapsPending[team.id] && (
+                        <span style={{fontSize:9,fontWeight:700,letterSpacing:1,color:"#5c4a1a",background:"#fff8e1",border:"1px solid #c9a84c",padding:"2px 6px",borderRadius:10}}>🔒 SWAP HIDDEN</span>
+                      )}
+                    </div>
                     <div style={{display:"flex",flexDirection:isMobile?"column":"row",gap:isMobile?4:6,flexWrap:"wrap",marginTop:4}}>
                       {!tournamentHasStarted()?(
                         <span style={{fontSize:11,color:"#999",fontStyle:"italic"}}>🔒 Roster hidden until the first tee time</span>

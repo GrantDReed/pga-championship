@@ -98,16 +98,21 @@ export default async function handler(req, res) {
     const revealTransfers = transfersRevealed();
     const teams = {};
     const transfers = {};
+    const swapsPending = {}; // boolean map: which teams have a pending swap (no contents)
     for (const id of TEAM_IDS) {
       const raw = await redis.get(`roster:${id}`);
       const roster = raw ? JSON.parse(raw) : [];
       teams[id] = revealed ? roster : [];
-      if (revealTransfers) {
-        const tRaw = await redis.get(`transfer:${id}`);
-        if (tRaw) transfers[id] = JSON.parse(tRaw);
+      const tRaw = await redis.get(`transfer:${id}`);
+      if (tRaw) {
+        if (revealTransfers) {
+          transfers[id] = JSON.parse(tRaw);
+        } else {
+          swapsPending[id] = true;
+        }
       }
     }
-    return res.status(200).json({ teams, transfers, revealed, transfersRevealed: revealTransfers });
+    return res.status(200).json({ teams, transfers, swapsPending, revealed, transfersRevealed: revealTransfers });
   }
 
   // POST — save a roster (build mode) or record a swap (swap mode)
