@@ -557,7 +557,7 @@ function App() {
       </div>
 
       <div style={{maxWidth:860,margin:"0 auto",padding:"0 16px",display:"flex",gap:0,borderBottom:"2px solid #e8e4da"}}>
-        {[["leaderboard","Leaderboard"],["npc","NPC Teams"]].map(([k,label])=>{
+        {[["leaderboard","Leaderboard"],["players","Players"],["npc","NPC Teams"]].map(([k,label])=>{
           const active=view===k;
           return (
             <button key={k} onClick={()=>setView(k)} style={{flex:1,padding:"10px 14px",background:"transparent",border:"none",borderBottom:active?"3px solid #c9a84c":"3px solid transparent",marginBottom:-2,cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:active?800:600,letterSpacing:2,color:active?"#002d72":"#999"}}>
