@@ -59,7 +59,8 @@ const costBg = { 4: "#b91c1c", 3: "#1d4ed8", 2: "#15803d", 1: "#7e22ce" };
 // once R2 is complete and the first R3 tee time is known.
 const EDIT_WINDOWS = [
   { open: new Date("2026-01-01T00:00:00-05:00"), close: new Date("2026-05-14T06:45:00-04:00"), label: "Team picks", mode: "build" },
-  // { open: new Date("..."), close: new Date("..."), label: "Transfer window", mode: "swap" },
+  // Post-R2 transfer window — close = first R3 tee time (8 AM ET placeholder).
+  { open: new Date("2026-05-15T18:00:00-04:00"), close: new Date("2026-05-16T08:00:00-04:00"), label: "Transfer window", mode: "swap" },
 ];
 // Rosters stay hidden in the public list until the first tee time.
 const TOURNAMENT_START = new Date("2026-05-14T06:45:00-04:00");
